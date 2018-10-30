@@ -16,11 +16,11 @@ class Controller {
 
     @CrossOrigin
     @RequestMapping("/stacked.png")
-    fun stacked_png(@RequestParam lines:List<String>): ByteArray{
+    fun stacked_png(@RequestParam agency:List<String>, @RequestParam size:Int = 800): ByteArray{
 
 
         val brand = Brand()
-        val image = brand.stacked(lines)
+        val image = brand.stacked(agency, size)
 
 
         val baos = ByteArrayOutputStream()

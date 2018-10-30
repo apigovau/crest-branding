@@ -7,12 +7,14 @@ import java.awt.event.*
 import java.awt.image.*
 import javax.imageio.*
 
+import com.twelvemonkeys.image.*
+
 
 class Brand{
 	val BRANDING_X = 60
 
 
-    fun stacked(lines:List<String>):BufferedImage{
+    fun stacked(lines:List<String>, scale:Int = 800):BufferedImage{
 
 			val crest= ImageIO.read(File("crest.png"))
 			val crestW = crest.getWidth()
@@ -44,14 +46,12 @@ class Brand{
 
 			
 		
-            // no square
+            // not forced to a square square
 			//ImageIO.write(canvas, "png", outputfile)
 
 
-            val scaleWidth = 100
-            val scaleHeight = 100
 
-            // square
+            // forced square
             val box = createImage(width, width)
 			val gBox = createGraphics(box)
 			gBox.fillRect(0, 0, width, width)
@@ -59,14 +59,10 @@ class Brand{
             // return box
 
             // scale
-            
-            val scaled = box.getScaledInstance(scaleWidth, scaleHeight, Image.SCALE_AREA_AVERAGING)
-            val resized =  BufferedImage(scaleWidth, scaleHeight, BufferedImage.TYPE_INT_RGB)
-            val resizedg2d = resized.createGraphics()
-            resizedg2d.drawImage(scaled, 0, 0, null)
 
-			//ImageIO.write(box, "png", outputfile)
-			
+            val resampler = ResampleOp(scale, scale, ResampleOp.FILTER_MITCHELL);
+            val resized = resampler.filter(box, null);
+
             return resized
 
     }
