@@ -83,7 +83,7 @@ class Brand{
 		val g = canvas.createGraphics()
 		g.setColor(Color.WHITE)
 		g.fillRect(0, 0, canvas.getWidth(), canvas.getHeight())
-		g.setFont(font)
+		g.setFont(fontBold)
 		g.setColor(Color.BLACK)
         g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON)
 		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
@@ -97,7 +97,7 @@ class Brand{
 			var offset = 40 + yOffset
 			for(line in lines){
 				val actualLineWidth = if(line == lines.last()) 0 else longestLine
-				val lineOffset = drawAndUnderline(g, line, offset, width, actualLineWidth, center)
+				val lineOffset = drawAndUnderline(g, line, offset, width, actualLineWidth, center, longestLine)
 				offset += lineOffset
 			}
 	}
@@ -117,7 +117,7 @@ class Brand{
 		return longest
 	}
 
-	fun drawAndUnderline(g:Graphics2D, text:String, y:Int, canvasWidth:Int, lineWidth:Int, center:Boolean):Int{
+	fun drawAndUnderline(g:Graphics2D, text:String, y:Int, canvasWidth:Int, lineWidth:Int, center:Boolean, longestLine:Int):Int{
 
 			if(text.contains("\n")){
 				val parts = text.split("\n")
@@ -125,7 +125,7 @@ class Brand{
 
 				for(part in parts){
 				    val actualLineWidth = if(part!= parts.last()) 0 else lineWidth
-                    drawAndUnderline(g, part, y + offset, canvasWidth, actualLineWidth, center)
+                    drawAndUnderline(g, part, y + offset, canvasWidth, actualLineWidth, center, longestLine)
                     val addedOffset = if(part != parts.last()) 60 else 80
                     offset += addedOffset
 				}
@@ -135,14 +135,29 @@ class Brand{
 			val stringWidth = g.getFontMetrics().stringWidth(text)
             val leftTextOffset = if(center) ((canvasWidth - stringWidth) / 2) else crestW + QUARTER_BRANDING_X
             val leftLineOffset = if(center) ((canvasWidth - lineWidth) / 2) else crestW + QUARTER_BRANDING_X
-			g.drawString(text, leftTextOffset, y)
-			g.fillRect( leftLineOffset, y + 20, lineWidth, 2)
 
+            if(text.startsWith("|")){
+                g.setFont(font)
+            
+                g.drawString(text.replace("|",""), leftTextOffset, y - 20)
+                g.fillRect( leftLineOffset, y, lineWidth, 2)
+                val leftLineOffsetErase = if(center) ((canvasWidth - longestLine) / 2) else crestW + QUARTER_BRANDING_X
+                g.setColor(Color.WHITE)
+                g.fillRect( leftLineOffsetErase, y - 60, longestLine, 2)   
+                g.setColor(Color.BLACK)
+                g.setFont(fontBold)
+                
+                return 60
+            }
+
+			g.drawString(text.replace("|",""), leftTextOffset, y)
+            g.fillRect( leftLineOffset, y + 20, lineWidth, 2)
 			return 80
 	}
 
 
     companion object{
+        @JvmStatic val fontBold = loadTimesFontBold()
         @JvmStatic val font = loadTimesFont()
         @JvmStatic val crest= loadCrest()
         @JvmStatic val crestW = crest.getWidth()
@@ -151,9 +166,18 @@ class Brand{
         @JvmStatic val QUARTER_BRANDING_X = (BRANDING_X / 4).toInt()
 
         @JvmStatic
-        fun loadTimesFont():Font{
+        fun loadTimesFontBold():Font{
             val cls = Brand::class.java
             val fontStream = cls.getResourceAsStream("/LiberationSerif-Bold.ttf")!!
+            val liberationSerif = Font.createFont(Font.TRUETYPE_FONT, fontStream)
+            val font = liberationSerif.deriveFont(54f)
+            return font
+        }
+
+        @JvmStatic
+        fun loadTimesFont():Font{
+            val cls = Brand::class.java
+            val fontStream = cls.getResourceAsStream("/LiberationSerif-Regular.ttf")!!
             val liberationSerif = Font.createFont(Font.TRUETYPE_FONT, fontStream)
             val font = liberationSerif.deriveFont(54f)
             return font
