@@ -77,7 +77,7 @@ The guidelines cater for sub-headings, for things such as function names.
 
 These use a non-bold font.
 
-If you prepend an 'agency' param with a pipe char (|, or %7A), that text will be a sub-heading
+If you prepend an 'agency' param with a pipe char (|, or %7C), that text will be a sub-heading
 
 Lines won't wrap.
 
