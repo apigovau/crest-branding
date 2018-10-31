@@ -25,7 +25,7 @@ test {
 }
 
 jar {
-    baseName = 'graph'
+    baseName = 'crest-branding'
     version = '1.0'
 }
 

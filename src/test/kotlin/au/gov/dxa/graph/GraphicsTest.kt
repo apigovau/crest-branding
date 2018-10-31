@@ -17,11 +17,16 @@ class GraphicsTest{
 
     @Test
     fun can_create_stacked(){
-
         val brand = Brand()
-        val image = brand.stacked(listOf("ATO","DTA"))
-        
-	    val outputfile = File("saved.png")
+        val image = brand.stacked(listOf("Australian Taxation\nOffice","Digital Transformation Agency"), 800, false)
+	    val outputfile = File("stacked.png")
+	    ImageIO.write(image, "png", outputfile)
+    }
+    @Test
+    fun can_create_inline(){
+        val brand = Brand()
+        val image = brand.inline(listOf("Australian Taxation\nOffice","Digital Transformation Agency"), 800, false)
+	    val outputfile = File("inline.png")
 	    ImageIO.write(image, "png", outputfile)
     }
 }

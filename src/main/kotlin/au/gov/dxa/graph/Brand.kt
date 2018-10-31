@@ -6,92 +6,107 @@ import java.awt.*
 import java.awt.event.*
 import java.awt.image.*
 import javax.imageio.*
-
 import com.twelvemonkeys.image.*
 
 
 class Brand{
-	val BRANDING_X = 60
 
 
-    fun stacked(lines:List<String>, scale:Int = 800):BufferedImage{
-
-			val crest= ImageIO.read(File("crest.png"))
-			val crestW = crest.getWidth()
-			val crestH = crest.getHeight()
-
-			val font = loadTimesFont()
-			val dummyG = createGraphics(createImage(1,1))
-			dummyG.setFont(font)
-
-			val longestLine = getLongestWidth(dummyG, lines)
-
-			var newLineCount = 0
-			for(line in lines) if(line.contains("\n")) newLineCount ++
-
-			val height = crestH + 80 * (lines.size + newLineCount + 1)
-			val width = longestLine + 2 * BRANDING_X
-
+    fun inline(lines:List<String>, setHeight:Int, square:Boolean):BufferedImage{
+            val linesStart = (BRANDING_X * 1.95).toInt()
+			val longestLine = getLongestWidth(lines)
+			val height = Math.max (crestH, 80 * (lines.size + howManyNewLines(lines) + 1) + linesStart)
+			val width = longestLine + 2 * BRANDING_X + crestW
 
 			val canvas = createImage(width, height)
 			val g = createGraphics(canvas)
-			g.setFont(font)
-				
-			g.setColor(Color.WHITE)
-			g.fillRect(0, 0, width, height)
+
+			g.drawImage(crest, QUARTER_BRANDING_X, QUARTER_BRANDING_X, null)
+			drawLines(g, lines, width, linesStart, longestLine, false)			
+
+            return sizeImage(canvas, setHeight, square) 
+    }
+
+    fun stacked(lines:List<String>, setHeight:Int, square:Boolean):BufferedImage{
+			val longestLine = getLongestWidth(lines)
+			val height = crestH + 80 * (lines.size + howManyNewLines(lines) + 1)
+			val width = longestLine + 2 * BRANDING_X
+
+			val canvas = createImage(width, height)
+			val g = createGraphics(canvas)
 
 			g.drawImage(crest, (width - crest.getWidth()) / 2, 0, null)
-			
-			drawLines(g, lines, width, crest.getHeight())			
+			drawLines(g, lines, width, crest.getHeight(), longestLine, true)			
 
-			
-		
-            // not forced to a square square
-			//ImageIO.write(canvas, "png", outputfile)
+            return sizeImage(canvas, setHeight, square) 
+    }
 
+    fun sizeImage(canvas:BufferedImage, setHeight:Int, square:Boolean):BufferedImage {
 
+            val width = canvas.getWidth()
+            val height = canvas.getHeight()
+
+	        if(!square){	
+                    val heightScale = height / setHeight.toFloat()
+                    val widthScale = width / heightScale
+                    val resampler = ResampleOp(widthScale.toInt(), setHeight, ResampleOp.FILTER_MITCHELL);
+                    val resized = resampler.filter(canvas, null);
+                    return resized 
+            }
 
             // forced square
             val box = createImage(width, width)
 			val gBox = createGraphics(box)
+            gBox.setColor(Color.WHITE)
 			gBox.fillRect(0, 0, width, width)
 			gBox.drawImage(canvas, 0, (width - height) / 2, null)
-            // return box
 
-            // scale
-
-            val resampler = ResampleOp(scale, scale, ResampleOp.FILTER_MITCHELL);
+            val resampler = ResampleOp(setHeight, setHeight, ResampleOp.FILTER_MITCHELL);
             val resized = resampler.filter(box, null);
 
             return resized
 
     }
 
+
+    fun howManyNewLines(lines:List<String>):Int{
+			var newLineCount = 0
+			for(line in lines) if(line.contains("\n")) newLineCount ++
+            return newLineCount
+    }
+
+
 	fun createImage(width:Int, height:Int):BufferedImage =
 		 BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
 
 	fun createGraphics(canvas:BufferedImage):Graphics2D{
 		val g = canvas.createGraphics()
-		g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON)
+		g.setColor(Color.WHITE)
+		g.fillRect(0, 0, canvas.getWidth(), canvas.getHeight())
+		g.setFont(font)
+		g.setColor(Color.BLACK)
+        g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON)
 		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
 		return g		
 	}
 	
 
 
-	fun drawLines(g:Graphics2D, initialLines:List<String>, width:Int, yOffset:Int){
+	fun drawLines(g:Graphics2D, initialLines:List<String>, width:Int, yOffset:Int, longestLine:Int, center:Boolean){
 			val lines = listOf("Australian Government") + initialLines
-			val lineWidth = getLongestWidth(g, lines)
 			var offset = 40 + yOffset
 			for(line in lines){
-				val actualLineWidth = if(line == lines.last()) 0 else lineWidth
-				val lineOffset = drawAndUnderline(g, line, offset, width, actualLineWidth)
+				val actualLineWidth = if(line == lines.last()) 0 else longestLine
+				val lineOffset = drawAndUnderline(g, line, offset, width, actualLineWidth, center)
 				offset += lineOffset
 			}
 	}
 
-	fun getLongestWidth(g:Graphics2D, initialLines:List<String>):Int{
-		val lines = listOf("Australian Government") + initialLines
+	fun getLongestWidth(initialLines:List<String>):Int{
+
+		val g = createGraphics(createImage(1,1))
+		
+        val lines = listOf("Australian Government") + initialLines
 		var longest = 0
 		for(line in lines){
 			for(part in line.split("\n")){
@@ -102,7 +117,7 @@ class Brand{
 		return longest
 	}
 
-	fun drawAndUnderline(g:Graphics2D, text:String, y:Int, canvasWidth:Int, lineWidth:Int):Int{
+	fun drawAndUnderline(g:Graphics2D, text:String, y:Int, canvasWidth:Int, lineWidth:Int, center:Boolean):Int{
 
 			if(text.contains("\n")){
 				val parts = text.split("\n")
@@ -110,17 +125,18 @@ class Brand{
 
 				for(part in parts){
 				    val actualLineWidth = if(part!= parts.last()) 0 else lineWidth
-                    drawAndUnderline(g, part, y + offset, canvasWidth, actualLineWidth)
+                    drawAndUnderline(g, part, y + offset, canvasWidth, actualLineWidth, center)
                     val addedOffset = if(part != parts.last()) 60 else 80
                     offset += addedOffset
 				}
                 return offset
 			}
 
-			g.setColor(Color.BLACK)
 			val stringWidth = g.getFontMetrics().stringWidth(text)
-			g.drawString(text, (canvasWidth - stringWidth) / 2, y)
-			g.fillRect( (canvasWidth - lineWidth) / 2, y + 20, lineWidth, 2)
+            val leftTextOffset = if(center) ((canvasWidth - stringWidth) / 2) else crestW + QUARTER_BRANDING_X
+            val leftLineOffset = if(center) ((canvasWidth - lineWidth) / 2) else crestW + QUARTER_BRANDING_X
+			g.drawString(text, leftTextOffset, y)
+			g.fillRect( leftLineOffset, y + 20, lineWidth, 2)
 
 			return 80
 	}
@@ -128,6 +144,11 @@ class Brand{
 
     companion object{
         @JvmStatic val font = loadTimesFont()
+        @JvmStatic val crest= loadCrest()
+        @JvmStatic val crestW = crest.getWidth()
+		@JvmStatic val crestH = crest.getHeight()
+        @JvmStatic val BRANDING_X = 60
+        @JvmStatic val QUARTER_BRANDING_X = (BRANDING_X / 4).toInt()
 
         @JvmStatic
         fun loadTimesFont():Font{
@@ -136,6 +157,13 @@ class Brand{
             val liberationSerif = Font.createFont(Font.TRUETYPE_FONT, fontStream)
             val font = liberationSerif.deriveFont(54f)
             return font
+        }
+
+
+        @JvmStatic
+        fun loadCrest():BufferedImage{
+            val cls = Brand::class.java
+            return ImageIO.read(cls.getResourceAsStream("/crest.png"))!! 
         }
     }
 
